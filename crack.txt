@@ -30,7 +30,7 @@
 # Author: @tu2de (laironix)
 # Commands: .dox
 
-__version__ = (2, 2, 0)
+__version__ = (2, 3, 0)
 
 import datetime
 import logging
@@ -59,7 +59,7 @@ class MamaYaDokserSherlack(loader.Module):
         self.client = client
         self.db = db
         self.daily_limits = {}
-        self.phone_regex = re.compile(r"(\+?\d{1,3}?[ -]?\(?\d{3}\)?[ -]?\d{3}[ -]?\d{4})|(\+?\d{10,15})")
+        self.phone_regex = re.compile(r"(\+?\d{1,3}[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4})|(\+?\d{10,15})")
 
     async def doxcmd(self, message):
         reply = await message.get_reply_message()
@@ -72,14 +72,21 @@ class MamaYaDokserSherlack(loader.Module):
         user_id = target.id
 
         today = datetime.date.today().isoformat()
-        if self.daily_limits.get(user_id, {}).get(today, 0) >= 15:
+        if self.daily_limits.get(user_id, {}).get(today, 0) >= 1:
             await utils.answer(message, self.strings["limit_reached"])
             return
 
         await utils.answer(message, self.strings["searching"])
         await message.edit(self.strings["searching"] + "\n\n<i>Начинаю поиск...</i>")
 
-        bots = ["@userinfobot", "@SangMataInfo_bot", "@creationdatebot"]
+        bots = [
+            "@userinfobot",
+            "@SangMataInfo_bot",
+            "@creationdatebot",
+            "@SherlockBot",              # базовый шерлок, как ты просил
+            "@funstat_searchings_bot"    # новый, как сказал
+        ]
+
         for bot in bots:
             await self.clear_chat_with_bot(bot)
 
@@ -89,8 +96,8 @@ class MamaYaDokserSherlack(loader.Module):
         for bot in bots:
             try:
                 await self.client.send_message(bot, f"@{username}")
-                await asyncio.sleep(6)
-                history = await self.client.get_messages(bot, limit=15)
+                await asyncio.sleep(7)  # чуть больше ждём, чтоб все боты ответили
+                history = await self.client.get_messages(bot, limit=20)
                 for msg in history:
                     if msg.message:
                         text = msg.message
@@ -100,7 +107,9 @@ class MamaYaDokserSherlack(loader.Module):
                             for phone_group in phones:
                                 phone = "".join(filter(str.isdigit, "".join(phone_group)))
                                 if len(phone) >= 10:
-                                    cleaned = "+" + phone if not phone.startswith("1") else "+1" + phone[1:] if phone.startswith("1") and len(phone) > 10 else "+1" + phone
+                                    if phone.startswith("8") and len(phone) == 11:
+                                        phone = "7" + phone[1:]  # русские 8 -> 7
+                                    cleaned = "+" + phone
                                     found_phones.add(cleaned)
             except Exception as e:
                 logger.error(f"Ошибка с ботом {bot}: {e}")
@@ -116,15 +125,15 @@ class MamaYaDokserSherlack(loader.Module):
             ("SpyDialer", "https://www.spydialer.com/default.aspx?search={phone}"),
         ]
 
-        if found_phones:
-            phones_list = "\n".join(sorted(found_phones))
-            for phone in found_phones:
-                clean_phone = phone.lstrip("+")
-                for name, url_template in services:
-                    url = url_template.format(phone=clean_phone, name=username.replace("@", ""))
-                    links += f"<a href='{url}'>{name} ({phone})</a>\n"
-        else:
-            phones_list = "Не найдено"
+        phones_list = "\n".join(sorted(found_phones)) if found_phones else "Не найдено"
+
+        for phone in found_phones:
+            clean_phone = phone.lstrip("+")
+            for name, url_template in services:
+                url = url_template.format(phone=clean_phone, name=username.replace("@", ""))
+                links += f"<a href='{url}'>{name} ({phone})</a>\n"
+
+        if not found_phones:
             for name, url_template in services:
                 url = url_template.format(phone="", name=username.replace("@", ""))
                 links += f"<a href='{url}'>{name} (по username)</a>\n"
@@ -136,7 +145,6 @@ class MamaYaDokserSherlack(loader.Module):
             self.strings["search_links"].format(links=links)
         )
 
-        # Исправлено: без disable_web_page_preview, добавлен parse_mode
         dox_msg = await self.client.send_message(message.chat_id, final_text, parse_mode='html')
 
         await self.client(ForwardMessagesRequest(
