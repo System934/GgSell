@@ -1,7 +1,7 @@
 
 
 -- ===== URL =====
-local SCRIPT_URL = "https://raw.githubusercontent.com/System934/GgSell/refs/heads/main/501.lua"
+local SCRIPT_URL = "https://api.junkie-development.de/api/v1/luascripts/public/8381f8030a22565ce93fbcbb4c15a653693b0076ded98d2575456f65e5714e08/download"
 
 -- ===== MAIN LOADSTRING =====
 loadstring(
