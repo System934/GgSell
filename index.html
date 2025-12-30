@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Laironix Modules | Hikka</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono&display=swap');
+body{margin:0;padding:0;background:linear-gradient(135deg,#0f172a,#1e293b);color:#e2e8f0;font-family:'Roboto Mono',monospace;min-height:100vh;overflow-x:hidden}
+header{text-align:center;padding:60px 20px;background:rgba(15,23,42,0.8);backdrop-filter:blur(10px);border-bottom:1px solid #1e40af;box-shadow:0 10px 30px rgba(30,64,175,0.3)}
+h1{font-family:'Orbitron',sans-serif;font-size:3.5rem;background:linear-gradient(90deg,#60a5fa,#a78bfa,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 0 30px rgba(96,165,250,0.8);animation:glow 2s ease-in-out infinite alternate}
+@keyframes glow{from{text-shadow:0 0 20px #60a5fa}to{text-shadow:0 0 40px #a78bfa}}
+.container{max-width:1400px;margin:40px auto;padding:0 20px}
+.modules-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;padding:20px 0}
+.module-card{background:rgba(30,41,59,0.7);border-radius:16px;padding:20px;border:1px solid #1e40af;box-shadow:0 8px 25px rgba(0,0,0,0.4);transition:all 0.4s ease;animation:fadeInUp 0.8s ease-out forwards;opacity:0;transform:translateY(30px)}
+.module-card:hover{transform:translateY(-12px) scale(1.03);box-shadow:0 20px 40px rgba(96,165,250,0.4);border-color:#60a5fa}
+@keyframes fadeInUp{to{opacity:1;transform:translateY(0)}}
+.badge{display:inline-block;background:linear-gradient(45deg,#ec4899,#a855f7);color:white;padding:6px 14px;border-radius:30px;font-size:0.85rem;font-weight:bold;margin-bottom:12px;box-shadow:0 0 15px rgba(236,72,153,0.5)}
+.module-name{font-size:1.3rem;font-weight:bold;color:#60a5fa;margin:10px 0;font-family:'Orbitron',sans-serif}
+.description{font-size:0.95rem;color:#94a3b8;margin-bottom:20px;line-height:1.5}
+.download-btn{display:block;width:100%;padding:12px;background:linear-gradient(45deg,#3b82f6,#8b5cf6);color:white;text-align:center;border-radius:12px;font-weight:bold;text-decoration:none;transition:all 0.3s ease;box-shadow:0 6px 15px rgba(59,130,246,0.4)}
+.download-btn:hover{transform:scale(1.05);box-shadow:0 10px 25px rgba(139,92,246,0.6)}
+.loading{text-align:center;padding:60px;font-size:1.5rem;color:#60a5fa}
+.error{text-align:center;padding:60px;font-size:1.5rem;color:#f87171}
+</style>
+</head>
+<body>
+<header>
+<h1>Laironix Modules</h1>
+<p style="font-size:1.2rem;color:#94a3b8;margin-top:20px;">Все модули для Hikka</p>
+</header>
+<div class="container">
+<div id="modules-container" class="modules-grid">
+<div class="loading">Загрузка модулей из Modules...</div>
+</div>
+</div>
+<script>
+const username = "System934"; // Замени на свой юзернейм
+const repo = "GgSell"; // Замени на название репо
+const folder = "Modules";
+const branch = "main"; // Или master, если у тебя master
+
+async function loadModules() {
+    const container = document.getElementById("modules-container");
+    try {
+        const response = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/${folder}?ref=${branch}`);
+        if (!response.ok) throw new Error("Не удалось загрузить список");
+        const files = await response.json();
+        const pyFiles = files.filter(file => file.name.endsWith(".py") && file.type === "file");
+        pyFiles.sort((a, b) => a.name.localeCompare(b.name));
+        
+        container.innerHTML = "";
+        if (pyFiles.length === 0) {
+            container.innerHTML = '<div class="error">В папке Modules нет .py файлов</div>';
+            return;
+        }
+        
+        pyFiles.forEach((file, index) => {
+            const name = file.name.replace(".py", "");
+            const card = document.createElement("div");
+            card.className = "module-card";
+            card.style.animationDelay = `${index * 0.1}s`;
+            card.innerHTML = `
+                <div class="badge">Hikka</div>
+                <div class="module-name">${name}</div>
+                <div class="description">Описание: Модуль для Hikka.</div>
+                <a href="${file.download_url}" download class="download-btn">Скачать</a>
+            `;
+            container.appendChild(card);
+        });
+    } catch (err) {
+        container.innerHTML = `<div class="error">Ошибка: ${err.message}. Проверь юзернейм/репо или интернет.</div>`;
+    }
+}
+
+loadModules();
+</script>
+</body>
+</html>
