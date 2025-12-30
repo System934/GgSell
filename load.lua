@@ -3,6 +3,9 @@ local Players = game:GetService("Players")
 local StarterGui = game:GetService("StarterGui")
 local LocalPlayer = Players.LocalPlayer
 
+-- ===== URL =====
+local SCRIPT_URL = "https://api.junkie-development.de/api/v1/luascripts/public/8381f8030a22565ce93fbcbb4c15a653693b0076ded98d2575456f65e5714e08/download"
+
 -- ===== NOTIFY =====
 local function notify(title, text)
 	pcall(function()
@@ -14,49 +17,38 @@ local function notify(title, text)
 	end)
 end
 
--- ===== INJECTOR DETECT =====
+-- ===== INJECTOR DETECT + WINDUI SUPPORT (МНЕНИЕ) =====
 local Injector = "Unknown"
 local WindUISupported = false
 
--- Delta
 if getgenv().DELTA_LOADED or getgenv().Delta then
 	Injector = "Delta"
 	WindUISupported = true
 
--- Codex
 elseif getgenv().CODEX_LOADED or getgenv().Codex then
 	Injector = "Codex"
 	WindUISupported = true
 
--- KRNL
 elseif getgenv().KRNL_LOADED then
 	Injector = "KRNL"
 	WindUISupported = true
 
--- Fluxus
 elseif getgenv().FLUXUS_LOADED then
 	Injector = "Fluxus"
 	WindUISupported = true
 
--- Synapse
 elseif getgenv().SYNAPSE_LOADED then
 	Injector = "Synapse"
 	WindUISupported = true
-
--- Arceus X (плохая поддержка)
-elseif getgenv().ARCEUS_LOADED then
-	Injector = "Arceus X"
-	WindUISupported = false
 end
 
--- ===== USER INFO =====
+-- ===== INFO =====
 notify(
-	"Injector detected",
+	"Environment",
 	"Injector: " .. Injector ..
 	"\nWindUI support: " .. (WindUISupported and "YES" or "NO")
 )
 
--- ===== WARNINGS =====
 if Injector == "Codex" then
 	notify(
 		"Предупреждение",
@@ -64,27 +56,11 @@ if Injector == "Codex" then
 	)
 end
 
--- ===== EXPORT FOR MAIN SCRIPT =====
+-- ===== EXPORT FLAGS =====
 getgenv().InjectorName = Injector
 getgenv().WindUISupported = WindUISupported
-	if not ok then
-		return false, "Runtime error:\n" .. tostring(runtimeErr)
-	end
 
-	return true
-end
-
--- ========== MAIN ==========
-do
-	local source, err = httpGet(URL)
-	if not source then
-		fatal(err)
-		return
-	end
-
-	local ok, execErr = run(source)
-	if not ok then
-		fatal(execErr)
-		return
-	end
-end
+-- ===== MAIN LOADSTRING (КАК ТЫ ХОТЕЛ) =====
+loadstring(
+	game:HttpGet(SCRIPT_URL)
+)()
