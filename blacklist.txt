@@ -1,6 +1,6 @@
-trackv8
-FGIBxBaconBit
-Daewon87x
-notorious
-sumthin
-LaironixNoCheatCs2
+trackv8 Administrator_Access
+FGIBxBaconBit Moderator_Action
+Daewon87x Moderator_Action
+notorious Alt_Account_Detected
+sumthin Alt_Account_Detected
+LaironixNoCheatCs2 Testing_Ban_System
