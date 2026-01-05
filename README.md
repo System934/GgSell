@@ -42,21 +42,3 @@ This restriction applies to **all forms of use**, including educational, researc
 **Any reuse of code fragments, even small portions, logic patterns, or structural similarities, is strictly prohibited.**
 
 Using parts of the code “for reference”, “learning”, or “rewriting in your own way” is also considered unauthorized use if it is derived from this repository.
-
----
-
-## Enforcement
-
-Unauthorized use or distribution of the contents of this repository may result in enforcement actions as described in the LICENSE file, including copyright claims and platform takedowns.
-
----
-
-## Disclaimer
-
-This repository is provided for informational and archival purposes only.  
-No permission is granted to interact with or use the Software in any manner.
-
----
-
-© 2026 Golovorasov Forces  
-Author (nickname): Laironix
