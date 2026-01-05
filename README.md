@@ -1,44 +1,21 @@
-# Project Notice
+# The Lost Front — Proprietary Roblox Script
 
-## Important Legal Information
+## Overview
+**The Lost Front** is a proprietary Lua script intended for execution in Roblox
+via supported executors.  
+This repository is **NOT open source** and is distributed under a **restricted
+proprietary license**.
 
-This repository contains proprietary software protected by copyright law.  
-A dedicated license file is included in this repository and **must be read before any interaction with the contents**.
-
-➡️ See: **LICENSE**
-
-By accessing, cloning, downloading, or viewing any files in this repository, you acknowledge that you are bound by the terms described in the LICENSE file.
-
----
-
-## About This Repository
-
-The scripts and files contained in this repository are designed to **modify the behavior of a game at runtime**.  
-This includes altering internal logic, mechanics, or execution flow of the target application.
-
-The Software is provided in an **obfuscated and protected form** and is not intended for public reuse, redistribution, or integration into other projects.
+The script may be executed **only in its original, unmodified form** and
+**only via the official source**.
 
 ---
 
-## Usage Restrictions
+## Official Execution Method
 
-This project is **NOT open source**.
+Execution is permitted **exclusively** using the following method:
 
-You are **not permitted** to:
 
-- use the scripts or execute them
-- copy or reuse any part of the code
-- extract or reuse logic, algorithms, or structures
-- modify, deobfuscate, or reverse engineer the files
-- publish, redistribute, or mirror the repository or its contents
-- include fragments of the code in other projects, public or private
+```lua
+loadstring(game:HttpGet("https://raw.githubusercontent.com/System934/TheLostFront/refs/heads/main/Thelostfront.lua"))() 
 
-This restriction applies to **all forms of use**, including educational, research, testing, private, or commercial purposes.
-
----
-
-## Code Reuse Policy
-
-**Any reuse of code fragments, even small portions, logic patterns, or structural similarities, is strictly prohibited.**
-
-Using parts of the code “for reference”, “learning”, or “rewriting in your own way” is also considered unauthorized use if it is derived from this repository.
