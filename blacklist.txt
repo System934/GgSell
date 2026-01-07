@@ -30,3 +30,4 @@ b_nnyhopper Deobuscator_Detected
 NOOBJOJO1412 Deobfuscator_Detected
 WhizGuy23 Deobfuscator_Detected
 NXWERNT Deobfuscator_Detected
+eblan ebna
