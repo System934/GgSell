@@ -4,3 +4,4 @@ Daewon87x Moderator_Action
 notorious Alt_Account_Detected  
 sumthin Alt_Account_Detected  
 siasdfh233 Deobfuscator_Log_Detect
+Chlenosos1240 Deobfuscator_Log_Detect
