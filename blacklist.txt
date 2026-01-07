@@ -27,3 +27,4 @@ Yro_44446 Deobfuscator_detected
 iupi_moloko Deobfuscator_detected
 apwidho Deobuscator_Detected
 b_nnyhopper Deobuscator_Detected
+NOOBJOJO1412 Deobfuscator_Detected
