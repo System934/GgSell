@@ -1,0 +1,160 @@
+local SKYBOX_ID = "rbxassetid://116355300471902"
+local MESH_ID = "rbxassetid://13049164651"
+local TEXTURE_ID = "rbxassetid://13049164734"
+local SOUND_ID = "rbxassetid://112846679663944"
+local NOISE_1_ID = "rbxassetid://15278268916"
+local NOISE_2_ID = "rbxassetid://6830386386"
+
+local Lighting = game:GetService("Lighting")
+local Workspace = game:GetService("Workspace")
+
+local function enforceSkybox()
+    for _, child in pairs(Lighting:GetChildren()) do
+        if child:IsA("Sky") then
+            child:Destroy()
+        end
+    end
+    
+    local sky = Instance.new("Sky")
+    sky.SkyboxBk = SKYBOX_ID
+    sky.SkyboxDn = SKYBOX_ID
+    sky.SkyboxFt = SKYBOX_ID
+    sky.SkyboxLf = SKYBOX_ID
+    sky.SkyboxRt = SKYBOX_ID
+    sky.SkyboxUp = SKYBOX_ID
+    sky.Parent = Lighting
+    
+    return sky
+end
+
+local protectedSky = enforceSkybox()
+local skyboxProtection = Lighting.ChildAdded:Connect(function(child)
+    if child:IsA("Sky") then
+        task.wait(0.1)
+        enforceSkybox()
+    end
+end)
+
+local function checkSkyboxProperties()
+    while task.wait(1) do
+        if protectedSky and protectedSky.Parent then
+            if protectedSky.SkyboxBk ~= SKYBOX_ID then protectedSky.SkyboxBk = SKYBOX_ID end
+            if protectedSky.SkyboxDn ~= SKYBOX_ID then protectedSky.SkyboxDn = SKYBOX_ID end
+            if protectedSky.SkyboxFt ~= SKYBOX_ID then protectedSky.SkyboxFt = SKYBOX_ID end
+            if protectedSky.SkyboxLf ~= SKYBOX_ID then protectedSky.SkyboxLf = SKYBOX_ID end
+            if protectedSky.SkyboxRt ~= SKYBOX_ID then protectedSky.SkyboxRt = SKYBOX_ID end
+            if protectedSky.SkyboxUp ~= SKYBOX_ID then protectedSky.SkyboxUp = SKYBOX_ID end
+        else
+            protectedSky = enforceSkybox()
+        end
+    end
+end
+
+local function destroyModels()
+    for _, model in pairs(Workspace:GetChildren()) do
+        if model:IsA("Model") then
+            model:Destroy()
+        end
+    end
+end
+
+local function playNachosSound()
+    local sound = Instance.new("Sound", Workspace)
+    sound.SoundId = SOUND_ID
+    sound.Name = "NACHOS"
+    sound.Volume = 0.5
+    sound.Looped = true
+    sound:Play()
+    return sound
+end
+
+local function spawnNachos()
+    local part = Instance.new("Part", Workspace)
+    part.Name = "Nachos"
+    part.CanCollide = false
+    part.Anchored = false
+    part.Size = Vector3.new(5, 5, 5)
+    part.Position = Vector3.new(math.random(-1000, 1000), 500, math.random(-1000, 1000)) -- Higher start point
+
+    local mesh = Instance.new("SpecialMesh", part)
+    mesh.MeshId = MESH_ID
+    mesh.TextureId = TEXTURE_ID
+    mesh.MeshType = "FileMesh"
+    mesh.Scale = Vector3.new(40, 40, 40)
+
+    local velocity = Instance.new("BodyVelocity", part)
+    velocity.Velocity = Vector3.new(0, -200, 0)
+    velocity.MaxForce = Vector3.new(0, math.huge, 0)
+    game.Debris:AddItem(velocity, 0.5)
+
+    task.delay(10, function()
+        if part and part.Parent then
+            part:Destroy()
+        end
+    end)
+end
+
+local function displayNachosMessage()
+    local msg = Instance.new("Message", Workspace)
+    msg.Text = "ШАРИПКА ПЛАЧИТ]" --Change this message if u need
+    task.wait(0.4)
+    msg:Destroy()
+end
+
+local function cleanStationaryNachos()
+    while task.wait(5) do
+        for _, part in pairs(Workspace:GetChildren()) do
+            if part:IsA("Part") and part.Name == "Nachos" then
+                if part.Velocity.Magnitude < 0.1 then
+                    part:Destroy()
+                end
+            end
+        end
+    end
+end
+
+local function setupSounds()
+    local bgSound = Instance.new("Sound", Workspace)
+    bgSound.SoundId = SOUND_ID
+    bgSound.Volume = 9999
+    bgSound.Looped = true
+    bgSound:Play()
+
+    local noise1 = Instance.new("Sound", Workspace)
+    noise1.SoundId = NOISE_1_ID
+    noise1.Volume = 10
+    noise1.Looped = true
+    noise1:Play()
+
+    local noise2 = Instance.new("Sound", Workspace)
+    noise2.SoundId = NOISE_2_ID
+    noise2.Volume = 10
+    noise2.Looped = true
+    noise2:Play()
+end
+
+coroutine.wrap(checkSkyboxProperties)()
+coroutine.wrap(function()
+    while task.wait(0.3) do destroyModels() end
+end)()
+coroutine.wrap(function()
+    local sound = playNachosSound()
+    while task.wait(1) do
+        if not Workspace:FindFirstChild("NACHOS") then
+            sound = playNachosSound()
+        end
+    end
+end)()
+coroutine.wrap(function()
+    while task.wait(0.4) do displayNachosMessage() end
+end)()
+coroutine.wrap(function()
+    while task.wait(1/30) do spawnNachos() end
+end)()
+coroutine.wrap(cleanStationaryNachos)()
+setupSounds()
+
+local hint = Instance.new("Hint", Workspace)
+hint.Text = "Um, nachos"
+task.wait(99999999999999999)
+hint:Destroy()
